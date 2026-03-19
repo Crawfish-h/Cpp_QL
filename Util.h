@@ -26,27 +26,23 @@ namespace ql
 
         struct Generic_Function
         {
-            Generic_Fptr GFptr;
+            std::function<std::any(std::initializer_list<std::any>)> GFunction;
 
             template<class F>
             Generic_Function(F func) 
             { 
-                GFptr = [](std::initializer_list<std::any> args) -> std::any 
+                GFunction = [&](std::initializer_list<std::any> args) -> std::any 
                 { 
-                    return func() 
+                    return func();
                 }; 
             }
 
             template<class ...Args>
             std::any operator()(Args&&... args)
             {
-                return GFptr(args...);
+                return GFunction(args...);
             }
-
-            operator Generic_Fptr() const { return GFptr; }
         };
-
-        #define Generic_Func(body) [](std::initializer_list<std::any> args) -> std::any { body }
 
         struct Filler_T__ {};
         void Impl_Trait(auto& trait, Filler_T__ value) {}
@@ -188,25 +184,44 @@ namespace ql
         t.size();
     } && !std::same_as<std::remove_cvref_t<T>, std::string>;
 
-    auto To_Tuple()
+    template<Container C>
+    auto Get(C&& container, size_t stop_Index)
     {
-        auto to_Tuple_Helper = [](){};
+        size_t current_Index = 0;
+        for (auto& element : container)
+        {
+            if (current_Index == stop_Index)
+            {
+                return element;
+            }
 
+            current_Index++;
+        }
 
-        return 1;
+        return typename std::decay_t<C>::value_type{};
     }
 
-    template<class Func>
-    using Return_T = std::invoke_result_t<decltype(Func)>;
+    template<class C, size_t... S_Args>
+    auto To_Tuple_Helper(C&& container, std::index_sequence<S_Args...> seq)
+    {
+        auto element_To_Tuple = [](C&& con, size_t index){ return Get(con, index); }; 
+        return std::make_tuple(element_To_Tuple(container, S_Args)...);
+    }
+
+    template<size_t N, class C>
+    auto To_Tuple(C&& container)
+    {
+        return To_Tuple_Helper(container, std::make_index_sequence<N>{});
+    }
 
     template<class Func, Container Con_T>
     auto Apply(Func&& func, Con_T&& container)
     {
         for (auto& element : container)
         {
-            std::invoke()
+            //std::invoke()
         }
-
+        std::apply
         return 1;
     }
 }
