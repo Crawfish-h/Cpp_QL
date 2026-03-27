@@ -11,11 +11,16 @@ struct Test_Type
     bool Boolean = true;
 };
 
-auto Test(std::initializer_list<int> ints, const size_t size)
+int Add(int a, int b)
 {
-    std::vector<int> vec = ints;
+    ql::fmt::Print("Add: {}\n", a + b);
+    return a + b;
+}
 
-    return ql::To_Tuple<size>(vec);
+template<class F, class Tuple>
+void test(F func, Tuple tuple)
+{
+    std::apply(func, tuple);
 }
 
 int main()
@@ -23,15 +28,24 @@ int main()
     ql::fmt::Print("\n");
     ql::Environment env;
 
-    std::vector<int> vec = { 2, 4, 6, 8, 10, 12 };
+    ql::Function_Traits<decltype(Add)>::Args t;
 
-    auto tuple = ql::To_Tuple<6>(vec);
-    ql::fmt::Print("Tuple: {}\n", std::get<0>(tuple));
-    ql::fmt::Print("Tuple: {}\n", std::get<1>(tuple));
-    ql::fmt::Print("Tuple: {}\n", std::get<2>(tuple));
-    ql::fmt::Print("Tuple: {}\n", std::get<3>(tuple));
-    ql::fmt::Print("Tuple: {}\n", std::get<4>(tuple));
-    ql::fmt::Print("Tuple: {}\n", std::get<5>(tuple));
+    std::tuple<int, int> tup = { 12, 100 };
+
+    ql::Any any_Tuple = tup;
+    auto tuple = std::any_cast<ql::Function_Traits<decltype(Add)>::Args>(any_Tuple.Data);
+
+    auto element = std::get<0>(tuple);
+    auto element_1 = std::get<1>(tuple);
+    ql::fmt::Print("any_Tuple: {}\n", element);
+    ql::fmt::Print("any_Tuple: {}\n", element_1);
+
+    test(Add, tuple);
+    
+    ql::Generic_Function gfn(Add);
+    gfn.Function_To_Tuple(Add);
+    int ret = gfn(4, 6);
+    ql::fmt::Print("ret: {}\n", ret);
 
     env.Create_Database("Data_0", 
     { 

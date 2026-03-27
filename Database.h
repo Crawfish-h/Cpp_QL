@@ -27,10 +27,14 @@ namespace ql
         template<class ...Args>
         Database& Select(Args&&... args)
         {
-            std::tuple<Args...> tup_Args(args...);
-
-            std::vector<std::string> column_Names;
+            //std::vector<Generic_Function> functions = { args... };
             
+            auto initial_Func = [](){};
+
+            auto call_Arg = [](auto func, auto prev_Func)
+            {
+                
+            }
 
             return *this;
         }

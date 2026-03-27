@@ -12,6 +12,24 @@ namespace ql
 {
         //#define Fptr(ret, name, args) ret (*name)args
 
+        class Any
+        {
+        public:
+            Any(std::any any_Arg) { Data = any_Arg; }
+
+            template<class T>
+            Any(T&& value) { Data = std::forward<T>(value); }
+
+            Any(){}
+
+            operator std::any() { return Data; }
+
+            template<class T>
+            operator T() { return std::any_cast<T>(Data); }
+
+            std::any Data;
+        };
+
         struct Fn_Data
         {
             template<class ...Valid_After_Fn_Data>
@@ -22,25 +40,66 @@ namespace ql
             const std::string Fn_Name;
         };
 
-        using Generic_Fptr = std::any (*)(std::initializer_list<std::any>);
+
+        // Function traits from https://stackoverflow.com/a/57622226, slightly edited.
+        template<class Func> 
+        class Function_Traits;
+
+        template<class R, class ...FArgs> 
+        class Function_Traits<R(FArgs...)>
+        {
+        public:
+            using Args = std::tuple<FArgs...>;
+            using Return_T = R;
+            const size_t Args_Num = std::tuple_size_v<Args>;
+            
+            const bool Ret_Is_Ptr = std::is_pointer_v<R>;
+            const bool Ret_Is_Const = std::is_const_v<R>; 
+            const bool Ret_Is_Class = std::is_class_v<R>; 
+
+            // Returns true if Args_Num == 1 and if 
+            // typeid(std::get<0>(Args)) == typeid(T);
+            template<class T>
+            constexpr bool Is_Unary_T()
+            {
+                //Args tuple = {};
+                //return (typeid(std::get<0>(tuple)) == typeid(T)) && Args_Num == 0;
+                return false;
+            }
+        };
+
+        //#define Function_Traits(function) Function_Traits_Detail<decltype(function)>
+
+        using Generic_Fptr = Any (*)(Any args);
 
         struct Generic_Function
         {
-            std::function<std::any(std::initializer_list<std::any>)> GFunction;
+            std::function<Any(Any)> GFunction;
+
+            std::type_index Arg_Types;
+            std::type_index Return_Type;
 
             template<class F>
             Generic_Function(F func) 
             { 
-                GFunction = [&](std::initializer_list<std::any> args) -> std::any 
+                using Func_Traits = typename Function_Traits<std::remove_pointer_t<decltype(func)>;
+                Arg_Types = typeid(Func_Traits::Args);
+                Return_Type = typeid(Func_Traits::Return_T);
+
+                GFunction = [=](Any args) -> Any
                 { 
-                    return func();
-                }; 
+                    auto tuple = Func_Traits::Args();
+                    auto tuple_Args = std::any_cast<decltype(tuple)>(args.Data);
+
+                    return std::apply(func, tuple_Args);
+                };
             }
 
             template<class ...Args>
-            std::any operator()(Args&&... args)
+            Any operator()(Args&&... args)
             {
-                return GFunction(args...);
+                std::tuple<Args...> tuple_Args(args...);
+                return GFunction(tuple_Args);
             }
         };
 
@@ -221,7 +280,7 @@ namespace ql
         {
             //std::invoke()
         }
-        std::apply
+        //std::apply
         return 1;
     }
 }
