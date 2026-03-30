@@ -34,7 +34,7 @@ namespace ql
             auto call_Arg = [](auto func, auto prev_Func)
             {
                 
-            }
+            };
 
             return *this;
         }

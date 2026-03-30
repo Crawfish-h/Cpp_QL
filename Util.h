@@ -7,6 +7,7 @@
 #include <string>
 #include <functional>
 #include <optional>
+#include <typeindex>
 
 namespace ql
 {
@@ -51,6 +52,7 @@ namespace ql
         public:
             using Args = std::tuple<FArgs...>;
             using Return_T = R;
+            using Function_Traits_T = Function_Traits<R(FArgs...)>;
             const size_t Args_Num = std::tuple_size_v<Args>;
             
             const bool Ret_Is_Ptr = std::is_pointer_v<R>;
@@ -68,7 +70,8 @@ namespace ql
             }
         };
 
-        //#define Function_Traits(function) Function_Traits_Detail<decltype(function)>
+        
+        #define Fn_Traits(func_Type) typename Function_Traits<std::remove_pointer_t<func_Type>>::Function_Traits_T
 
         using Generic_Fptr = Any (*)(Any args);
 
@@ -80,16 +83,15 @@ namespace ql
             std::type_index Return_Type;
 
             template<class F>
-            Generic_Function(F func) 
+            Generic_Function(F func) : 
+                Arg_Types(typeid(Fn_Traits(F)::Args)), 
+                Return_Type(typeid(Fn_Traits(F)::Return_T))
             { 
-                using Func_Traits = typename Function_Traits<std::remove_pointer_t<decltype(func)>;
-                Arg_Types = typeid(Func_Traits::Args);
-                Return_Type = typeid(Func_Traits::Return_T);
-
+                //using Func_traits = Function_Traits<std::remove_pointer_t<decltype(func)>>;
+                
                 GFunction = [=](Any args) -> Any
                 { 
-                    auto tuple = Func_Traits::Args();
-                    auto tuple_Args = std::any_cast<decltype(tuple)>(args.Data);
+                    auto tuple_Args = std::any_cast<Fn_Traits(F)::Args>(args.Data);
 
                     return std::apply(func, tuple_Args);
                 };

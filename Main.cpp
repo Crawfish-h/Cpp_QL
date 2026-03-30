@@ -43,9 +43,8 @@ int main()
     test(Add, tuple);
     
     ql::Generic_Function gfn(Add);
-    gfn.Function_To_Tuple(Add);
     int ret = gfn(4, 6);
-    ql::fmt::Print("ret: {}\n", ret);
+    //ql::fmt::Print("fn type: {}, {}\n", gfn.Return_Type.name(), gfn.Arg_Types.name());
 
     env.Create_Database("Data_0", 
     { 

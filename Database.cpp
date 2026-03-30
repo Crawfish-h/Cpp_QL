@@ -114,6 +114,6 @@ namespace ql
 
     Database& Database::Insert(const std::string& table_Name, Init_List_Pair<std::string> column_Names, Init_List_Pair<To_String> values)
     {
-
+        return *this;
     }
 }
