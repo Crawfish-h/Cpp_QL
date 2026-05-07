@@ -57,7 +57,9 @@ int main()
         { "Column_3", Tid(Test) }
     });
 
-    //env.Print_Databases();
+    env.Print_Databases();
+
+    env.Databases["Data_0"].Select("Column_0", "Column_1");
 
     return 0;
 }

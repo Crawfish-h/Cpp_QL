@@ -113,6 +113,48 @@
                     "foreground": "#ff3582"
                 }
             },
+            {
+                "scope": "storage.type",
+                "settings": {
+                    "foreground": "#4080ff"
+                }
+            },
+            {
+                "scope": "storage.modifier.reference.cpp",
+                "settings": {
+                    "foreground": "#ff4040"
+                }
+            },
+            {
+                "scope": "entity.name.function.preprocessor.cpp", 	
+                "settings": {
+                    "foreground": "#ee57ff"
+                }
+            },
+            {
+                "scope": [
+                    //"punctuation.section.angle-brackets.end.template.call.cpp",
+                    //"punctuation.section.angle-brackets.begin.template.call.cpp",
+                    //"punctuation.section.angle-brackets.begin.template.definition.cpp",
+                    //"punctuation.section.angle-brackets.end.template.definition.cpp",
+                    //"keyword.operator.comparison.cpp"
+                ],
+                "settings": {
+                    "foreground": "#ff7171"
+                }
+            }
         ]
-    }
+    },
+    "editor.semanticHighlighting.enabled": true,
+
+    "editor.semanticTokenColorCustomizations": {
+        "enabled": true,
+        "rules": {
+            "namespace": {
+                "foreground": "#a057ff"
+            },
+            "keyword.class": "#ff0000"
+        }
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/gcc-14"
 }

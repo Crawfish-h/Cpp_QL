@@ -1,9 +1,13 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.28.3)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 project(Cpp_Ql CXX)
 
 find_package(Boost REQUIRED)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(
     ${PROJECT_NAME}
@@ -23,5 +27,6 @@ add_executable(
     ${PROJECT_SOURCE_DIR}/Table.cpp
 )
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+target_compile_options(${PROJECT_NAME} PUBLIC "-std=c++23")
+
 target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})

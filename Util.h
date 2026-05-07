@@ -8,10 +8,15 @@
 #include <functional>
 #include <optional>
 #include <typeindex>
+#include <variant>
 
 namespace ql
-{
-        //#define Fptr(ret, name, args) ret (*name)args
+{       
+        template<class V, class T>
+        bool Holds_Alt(V variant)
+        {
+            return std::holds_alternative<T>(variant);
+        }
 
         class Any
         {

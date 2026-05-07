@@ -22,25 +22,38 @@ namespace ql
 
         Table& Create_Table(std::string name, Init_List_Pair<std::string> columns = {});
 
-        // Only pass strings and callables as arguments to this function.
-        // Columns' string names should be before other functions.
-        template<class ...Args>
-        Database& Select(Args&&... args)
+        class Return_Base
         {
-            //std::vector<Generic_Function> functions = { args... };
-            
-            auto initial_Func = [](){};
+        public:
+            Return_Base(Database& database) : Database_(database) {}
 
-            auto call_Arg = [](auto func, auto prev_Func)
+        protected:
+            Database& Database_;
+        };
+
+        struct From_Return : Return_Base
+        {
+            Map<std::string_view, Column*> Columns;
+        };
+
+        struct Select_Return : Return_Base
+        {
+            auto From(std::variant<std::string_view, Table*> table)
             {
-                
-            };
+                From_Return return_Val(Database_);
 
-            return *this;
+            }
+
+            std::vector<std::string_view> column_Names;
+        };
+
+        template<class ...Args>
+        auto Select(Args&&... args)
+        {
+            Select_Return return_Val(*this);
+            return_Val.column_Names = { args... };
+            return return_Val;
         }
-
-        std::pair<std::string, Map<std::string*, Column*>> From(const std::string& table_Name, 
-            Fn_Data fn_Data = Fn_Data("From", "Where", "Inner", "Left", "Right", "Union"));
 
         // Prints the contents of Database.Select_Data_;
         Database& Print();
