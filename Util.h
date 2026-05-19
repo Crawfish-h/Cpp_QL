@@ -21,19 +21,36 @@ namespace ql
         class Any
         {
         public:
-            Any(std::any any_Arg) { Data = any_Arg; }
+            Any(std::any any_Arg) { Data = any_Arg; Ref.Data_Ref = &Data; }
 
             template<class T>
-            Any(T&& value) { Data = std::forward<T>(value); }
+            Any(T&& value) { Data = std::forward<T>(value); Ref.Data_Ref = &Data; }
 
-            Any(){}
+            Any(){ Ref.Data_Ref = &Data; }
 
             operator std::any() { return Data; }
 
             template<class T>
             operator T() { return std::any_cast<T>(Data); }
 
+            struct Ref_T
+            {
+                Ref_T(std::any& data){ Data_Ref = &data; }
+                Ref_T(){}
+                std::any* Data_Ref = nullptr;
+
+                template<class T>
+                operator T&() { return std::any_cast<T>(Data); }
+            };
+
+            template<class T>
+            T& As()
+            {
+                return std::any_cast<T>(Data);
+            }
+
             std::any Data;
+            Ref_T Ref;
         };
 
         struct Fn_Data

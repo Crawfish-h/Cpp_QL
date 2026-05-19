@@ -25,41 +25,7 @@ void test(F func, Tuple tuple)
 
 int main()
 {
-    ql::fmt::Print("\n");
-    ql::Environment env;
-
-    ql::Function_Traits<decltype(Add)>::Args t;
-
-    std::tuple<int, int> tup = { 12, 100 };
-
-    ql::Any any_Tuple = tup;
-    auto tuple = std::any_cast<ql::Function_Traits<decltype(Add)>::Args>(any_Tuple.Data);
-
-    auto element = std::get<0>(tuple);
-    auto element_1 = std::get<1>(tuple);
-    ql::fmt::Print("any_Tuple: {}\n", element);
-    ql::fmt::Print("any_Tuple: {}\n", element_1);
-
-    test(Add, tuple);
     
-    ql::Generic_Function gfn(Add);
-    int ret = gfn(4, 6);
-    //ql::fmt::Print("fn type: {}, {}\n", gfn.Return_Type.name(), gfn.Arg_Types.name());
-
-    env.Create_Database("Data_0", 
-    { 
-        { "Table_0", ql::Table({ { "Column_0", ql::Column() } }) } 
-    })
-    .Create_Table("Table_1", {
-        { "Column_0", Tid(int) },
-        { "Column_1", Tid(bool) },
-        { "Column_2", Tid(float) },
-        { "Column_3", Tid(Test) }
-    });
-
-    env.Print_Databases();
-
-    env.Databases["Data_0"].Select("Column_0", "Column_1");
 
     return 0;
 }
