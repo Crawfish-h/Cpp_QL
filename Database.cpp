@@ -3,5 +3,8 @@
 
 namespace ql
 {
-    
+    Table& Database::Create_Table(const std::string& name)
+    {
+        
+    }
 }

@@ -2,6 +2,7 @@
 #include "Print.h"
 #include "Environment.h"
 #include "Match.h"
+#include <print>
 
 #define Lambda(block) [&](auto arg) -> void* { block return nullptr; }
 

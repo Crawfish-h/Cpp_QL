@@ -10,5 +10,14 @@
 
 namespace ql
 {
-    
+    class Database
+    {
+    public:
+        Database(const std::string& name) : Name(name) {}
+
+        Table& Create_Table(const std::string& name);
+
+    private:
+        std::string Name;
+    };
 }

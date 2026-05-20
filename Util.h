@@ -95,7 +95,7 @@ namespace ql
         
         #define Fn_Traits(func_Type) typename Function_Traits<std::remove_pointer_t<func_Type>>::Function_Traits_T
 
-        using Generic_Fptr = Any (*)(Any args);
+        using Any_Fn = Any (*)(Any args);
 
         struct Generic_Function
         {

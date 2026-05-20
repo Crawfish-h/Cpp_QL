@@ -156,5 +156,5 @@
             "keyword.class": "#ff0000"
         }
     },
-    "C_Cpp.default.compilerPath": "/usr/bin/gcc-14"
+    "C_Cpp.default.compilerPath": "/usr/bin/g++-14"
 }

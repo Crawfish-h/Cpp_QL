@@ -1,5 +1,4 @@
 #pragma once
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <any>
@@ -15,35 +14,31 @@ namespace ql
 
     struct Column
     {
-        Column(){}
-        Column(const std::string& type)
-            : CType(type) {}
+        
+        std::string Name;
+        std::string Type;
+        std::vector<Any> Rows;
+        Any Metadata;
+        Any_Fn Add;
+        Any_Fn Sub;
+        Any_Fn Mul;
+        Any_Fn Div;
+        Any_Fn Print;
 
-        std::string CType;
-
-        // Originally, this was a vector of std::any, However, using std::any prevented 
-        // the ability for users to easily print their own types without having to edit
-        // Some sort of potentially large switch statement. 
-        // So, using a rust-like trait system allows for better ergonomics.
-        std::vector<To_String> Rows;
-        Table* CTable; // The Table that owns this Column.
+        Column(const std::string& name, const std::string& type, std::initializer_list<Any> rows, Any metadata, 
+            Any_Fn add,
+            Any_Fn sub,
+            Any_Fn mul,
+            Any_Fn div,
+            Any_Fn print
+        ) : Name(name), Type(type), Rows(rows), Metadata(metadata), Add(add), Sub(sub), Mul(mul), Div(div), Print(print) {}
     };
 
     class Table
     {
     public:
-        Table(Init_List_Pair<Column> columns = {})
-            : Columns(columns.begin(), columns.end()) {}
-
-        Table(bool is_Invalid) { Is_Invalid = is_Invalid; }
-
-        Table& Create_Column(const std::string& name, const std::string& type);
-
-        // The string key equals the name of the column value.
-        std::unordered_map<std::string, Column> Columns;
-
-        Database* TDatabase; // The Database that owns this table.
-        bool Is_Invalid = false;
+        Map<std::string, Column> Columns;
+        std::string Name;
     };
 
     extern Table Invalid_Table;
