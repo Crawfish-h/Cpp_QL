@@ -25,14 +25,31 @@ namespace ql
         Any_Fn Div;
         Any_Fn Print;
 
-        Column(const std::string& name, const std::string& type, std::initializer_list<Any> rows, Any metadata, 
-            Any_Fn add,
-            Any_Fn sub,
-            Any_Fn mul,
-            Any_Fn div,
-            Any_Fn print
-        ) : Name(name), Type(type), Rows(rows), Metadata(metadata), Add(add), Sub(sub), Mul(mul), Div(div), Print(print) {}
+        Column(){}
+        
+        template<class T>
+        Column(const std::string& name, Any metadata = {}, 
+            Any_Fn add = nullptr,
+            Any_Fn sub = nullptr,
+            Any_Fn mul = nullptr,
+            Any_Fn div = nullptr,
+            Any_Fn print = nullptr,
+            Init_List<Any> rows = {}
+        ) : Name(name), Metadata(metadata), Add(add), Sub(sub), Mul(mul), Div(div), Print(print), Rows(rows) {}
     };
+
+    template<class T>
+    Column Col(const std::string& name, Any metadata = {}, 
+        Any_Fn add = nullptr,
+        Any_Fn sub = nullptr,
+        Any_Fn mul = nullptr,
+        Any_Fn div = nullptr,
+        Any_Fn print = nullptr,
+        Init_List<Any> rows = {}
+    ) 
+    {
+        
+    }
 
     class Table
     {

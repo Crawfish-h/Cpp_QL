@@ -15,9 +15,10 @@ namespace ql
     public:
         Database(const std::string& name) : Name(name) {}
 
-        Table& Create_Table(const std::string& name);
+        Table& Create_Table(const std::string& name, Init_List<Column> columns);
 
     private:
+        Map<std::string, Column> Columns;
         std::string Name;
     };
 }

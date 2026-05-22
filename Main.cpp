@@ -26,7 +26,10 @@ void test(F func, Tuple tuple)
 
 int main()
 {
+    ql::Environment env;
+    env.Create_Database("Database_0")
+    .Create_Table("Table_0", {Col<int>{"UID"}});
+    //.Table_Add_Row(Table, row args...)
     
-
     return 0;
 }
