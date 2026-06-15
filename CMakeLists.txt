@@ -17,6 +17,7 @@ add_executable(
     ${PROJECT_SOURCE_DIR}/Result.h
     ${PROJECT_SOURCE_DIR}/Print.h
     ${PROJECT_SOURCE_DIR}/Match.h
+    ${PROJECT_SOURCE_DIR}/Enumerable.h
 )
 
 target_compile_options(${PROJECT_NAME} PUBLIC "-std=c++23")

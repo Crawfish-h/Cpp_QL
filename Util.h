@@ -9,146 +9,175 @@
 #include <optional>
 #include <typeindex>
 #include <variant>
+#include <initializer_list>
 
 namespace ql
 {       
-        template<class V, class T>
-        bool Holds_Alt(V variant)
-        {
-            return std::holds_alternative<T>(variant);
-        }
-
-        class Any
-        {
-        public:
-            Any(std::any any_Arg) { Data = any_Arg; Ref.Data_Ref = &Data; }
-
-            template<class T>
-            Any(T&& value) { Data = std::forward<T>(value); Ref.Data_Ref = &Data; }
-
-            Any(){ Ref.Data_Ref = &Data; }
-
-            operator std::any() { return Data; }
-
-            template<class T>
-            operator T() { return std::any_cast<T>(Data); }
-
-            struct Ref_T
-            {
-                Ref_T(std::any& data){ Data_Ref = &data; }
-                Ref_T(){}
-                std::any* Data_Ref = nullptr;
-
-                template<class T>
-                operator T&() { return std::any_cast<T>(Data); }
-            };
-
-            template<class T>
-            T& As()
-            {
-                return std::any_cast<T>(Data);
-            }
-
-            std::any Data;
-            Ref_T Ref;
-        };
-
-        struct Fn_Data
-        {
-            template<class ...Valid_After_Fn_Data>
-            Fn_Data(const std::string& fn_Name, Valid_After_Fn_Data&&... after_Fn_Data)
-            : Fn_Name(fn_Name), After_Fn_Data{after_Fn_Data...} {}
-
-            const std::vector<std::string> After_Fn_Data;
-            const std::string Fn_Name;
-        };
-
-
-        // Function traits from https://stackoverflow.com/a/57622226, slightly edited.
-        template<class Func> 
-        class Function_Traits;
-
-        template<class R, class ...FArgs> 
-        class Function_Traits<R(FArgs...)>
-        {
-        public:
-            using Args = std::tuple<FArgs...>;
-            using Return_T = R;
-            using Function_Traits_T = Function_Traits<R(FArgs...)>;
-            const size_t Args_Num = std::tuple_size_v<Args>;
-            
-            const bool Ret_Is_Ptr = std::is_pointer_v<R>;
-            const bool Ret_Is_Const = std::is_const_v<R>; 
-            const bool Ret_Is_Class = std::is_class_v<R>; 
-
-            // Returns true if Args_Num == 1 and if 
-            // typeid(std::get<0>(Args)) == typeid(T);
-            template<class T>
-            constexpr bool Is_Unary_T()
-            {
-                //Args tuple = {};
-                //return (typeid(std::get<0>(tuple)) == typeid(T)) && Args_Num == 0;
-                return false;
-            }
-        };
-
+    template<class T, size_t N>
+    struct Constxpr_Array
+    {
+        constexpr Constxpr_Array(){}
         
-        #define Fn_Traits(func_Type) typename Function_Traits<std::remove_pointer_t<func_Type>>::Function_Traits_T
-
-        using Any_Fn = Any (*)(Any args);
-
-        struct Generic_Function
+        constexpr Constxpr_Array(std::initializer_list<T> list)
         {
-            std::function<Any(Any)> GFunction;
-
-            std::type_index Arg_Types;
-            std::type_index Return_Type;
-
-            template<class F>
-            Generic_Function(F func) : 
-                Arg_Types(typeid(Fn_Traits(F)::Args)), 
-                Return_Type(typeid(Fn_Traits(F)::Return_T))
-            { 
-                //using Func_traits = Function_Traits<std::remove_pointer_t<decltype(func)>>;
-                
-                GFunction = [=](Any args) -> Any
-                { 
-                    auto tuple_Args = std::any_cast<Fn_Traits(F)::Args>(args.Data);
-
-                    return std::apply(func, tuple_Args);
-                };
-            }
-
-            template<class ...Args>
-            Any operator()(Args&&... args)
+            auto iter = list.begin();
+            for (size_t i = 0; i < N; i++)
             {
-                std::tuple<Args...> tuple_Args(args...);
-                return GFunction(tuple_Args);
+                Array[i] = *iter;
+                iter++;
             }
-        };
-
-        struct Filler_T__ {};
-        void Impl_Trait(auto& trait, Filler_T__ value) {}
-
-        struct To_String
-        {
-            To_String(auto&& value)
-            {
-                Impl_Trait(*this, value);
-                Data = value;
-            }
-
-            std::any Data;
-
-            std::function<std::string()> As_String;
-        };
-
-        template <class T> 
-        requires requires(T val) { std::to_string(val); }
-        void Impl_Trait(To_String& trait, T value)
-        {
-            trait.As_String = [&](){ return std::to_string(std::any_cast<decltype(value)>(trait.Data)); };
         }
+
+        constexpr size_t Size()
+        {
+            return N;
+        }
+
+        constexpr T& operator[](const int index)
+        {
+            return Array[index];
+        }
+
+        T Array[N];
+    };
+
+    template<class V, class T>
+    bool Holds_Alt(V variant)
+    {
+        return std::holds_alternative<T>(variant);
+    }
+
+    class Any
+    {
+    public:
+        Any(std::any any_Arg) { Data = any_Arg; Ref.Data_Ref = &Data; }
+
+        template<class T>
+        Any(T&& value) { Data = std::forward<T>(value); Ref.Data_Ref = &Data; }
+
+        Any(){ Ref.Data_Ref = &Data; }
+
+        operator std::any() { return Data; }
+
+        template<class T>
+        operator T() { return std::any_cast<T>(Data); }
+
+        struct Ref_T
+        {
+            Ref_T(std::any& data){ Data_Ref = &data; }
+            Ref_T(){}
+            std::any* Data_Ref = nullptr;
+
+            template<class T>
+            operator T&() { return std::any_cast<T>(Data); }
+        };
+
+        template<class T>
+        T& As()
+        {
+            return std::any_cast<T>(Data);
+        }
+
+        std::any Data;
+        Ref_T Ref;
+    };
+
+    struct Fn_Data
+    {
+        template<class ...Valid_After_Fn_Data>
+        Fn_Data(const std::string& fn_Name, Valid_After_Fn_Data&&... after_Fn_Data)
+        : Fn_Name(fn_Name), After_Fn_Data{after_Fn_Data...} {}
+
+        const std::vector<std::string> After_Fn_Data;
+        const std::string Fn_Name;
+    };
+
+
+    // Function traits from https://stackoverflow.com/a/57622226, slightly edited.
+    template<class Func> 
+    class Function_Traits;
+
+    template<class R, class ...FArgs> 
+    class Function_Traits<R(FArgs...)>
+    {
+    public:
+        using Args = std::tuple<FArgs...>;
+        using Return_T = R;
+        using Function_Traits_T = Function_Traits<R(FArgs...)>;
+        const size_t Args_Num = std::tuple_size_v<Args>;
+        
+        const bool Ret_Is_Ptr = std::is_pointer_v<R>;
+        const bool Ret_Is_Const = std::is_const_v<R>; 
+        const bool Ret_Is_Class = std::is_class_v<R>; 
+
+        // Returns true if Args_Num == 1 and if 
+        // typeid(std::get<0>(Args)) == typeid(T);
+        template<class T>
+        constexpr bool Is_Unary_T()
+        {
+            //Args tuple = {};
+            //return (typeid(std::get<0>(tuple)) == typeid(T)) && Args_Num == 0;
+            return false;
+        }
+    };
+
+    
+    #define Fn_Traits(func_Type) typename Function_Traits<std::remove_pointer_t<func_Type>>::Function_Traits_T
+
+    using Any_Fn = Any (*)(Any args);
+
+    struct Generic_Function
+    {
+        std::function<Any(Any)> GFunction;
+
+        std::type_index Arg_Types;
+        std::type_index Return_Type;
+
+        template<class F>
+        Generic_Function(F func) : 
+            Arg_Types(typeid(Fn_Traits(F)::Args)), 
+            Return_Type(typeid(Fn_Traits(F)::Return_T))
+        { 
+            //using Func_traits = Function_Traits<std::remove_pointer_t<decltype(func)>>;
+            
+            GFunction = [=](Any args) -> Any
+            { 
+                auto tuple_Args = std::any_cast<Fn_Traits(F)::Args>(args.Data);
+
+                return std::apply(func, tuple_Args);
+            };
+        }
+
+        template<class ...Args>
+        Any operator()(Args&&... args)
+        {
+            std::tuple<Args...> tuple_Args(args...);
+            return GFunction(tuple_Args);
+        }
+    };
+
+    struct Filler_T__ {};
+    void Impl_Trait(auto& trait, Filler_T__ value) {}
+
+    struct To_String
+    {
+        To_String(auto&& value)
+        {
+            Impl_Trait(*this, value);
+            Data = value;
+        }
+
+        std::any Data;
+
+        std::function<std::string()> As_String;
+    };
+
+    template <class T> 
+    requires requires(T val) { std::to_string(val); }
+    void Impl_Trait(To_String& trait, T value)
+    {
+        trait.As_String = [&](){ return std::to_string(std::any_cast<decltype(value)>(trait.Data)); };
+    }
 
     class Eq
     {
@@ -225,11 +254,11 @@ namespace ql
             return ((value == args) || ...);
     }
 
-    template <class F>
-    concept Callable = std::is_invocable<F>::value;
-
     template <class F, class R, class ...Args>
-    concept Callable_Ts = std::is_invocable_r_v<R, F, Args...>;
+    concept Callable = std::is_invocable_r_v<R, F, Args...>;
+
+    template <class F>
+    concept Callable_F = std::is_invocable<F>::value;
 
     template<class F>
     concept Returns_Void = requires(F f)
