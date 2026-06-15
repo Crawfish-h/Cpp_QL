@@ -17,6 +17,14 @@ add_executable(
     ${PROJECT_SOURCE_DIR}/Result.h
     ${PROJECT_SOURCE_DIR}/Print.h
     ${PROJECT_SOURCE_DIR}/Match.h
+    ${PROJECT_SOURCE_DIR}/Environment.cpp
+    ${PROJECT_SOURCE_DIR}/Environment.h
+    ${PROJECT_SOURCE_DIR}/Type.h
+    ${PROJECT_SOURCE_DIR}/Type.cpp
+    ${PROJECT_SOURCE_DIR}/Database.h
+    ${PROJECT_SOURCE_DIR}/Database.cpp
+    ${PROJECT_SOURCE_DIR}/Table.h
+    ${PROJECT_SOURCE_DIR}/Table.cpp
 )
 
 target_compile_options(${PROJECT_NAME} PUBLIC "-std=c++23")
