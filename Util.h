@@ -10,36 +10,42 @@
 #include <typeindex>
 #include <variant>
 #include <initializer_list>
+//#include <iterator>
+#include <boost/type_index.hpp>
 
 namespace ql
 {       
-    template<class T, size_t N>
-    struct Constxpr_Array
+    #define Tid(T) #T
+
+    // Type id for an expression.
+    #define Tide(expr) 
+
+    #define Type_Id(T) \
+    boost::typeindex::type_id_with_cvr<decltype(T)>()
+
+    auto Type_Id_Traits(std::string_view type_Name)
     {
-        constexpr Constxpr_Array(){}
-        
-        constexpr Constxpr_Array(std::initializer_list<T> list)
+        struct
         {
-            auto iter = list.begin();
-            for (size_t i = 0; i < N; i++)
-            {
-                Array[i] = *iter;
-                iter++;
-            }
+            bool Is_Ptr = false;
+            bool Is_Ref = false;
+            bool Is_Const = false;
+        } traits;
+
+        size_t str_Pos = type_Name.find("const ");
+        if (*std::prev(type_Name.end()) == '&')
+        {
+            traits.Is_Ref = true;
+        }else if (*std::prev(type_Name.end()) == '*')
+        {
+            traits.Is_Ptr = true;
+        }else if (str_Pos != std::string::npos && str_Pos == 0)
+        {
+            traits.Is_Const = true;
         }
 
-        constexpr size_t Size()
-        {
-            return N;
-        }
-
-        constexpr T& operator[](const int index)
-        {
-            return Array[index];
-        }
-
-        T Array[N];
-    };
+        return traits;
+    }
 
     template<class V, class T>
     bool Holds_Alt(V variant)
@@ -50,10 +56,24 @@ namespace ql
     class Any
     {
     public:
-        Any(std::any any_Arg) { Data = any_Arg; Ref.Data_Ref = &Data; }
+        Any(std::any any_Arg) 
+        { 
+            Data = any_Arg;
+            Ref.Data_Ref = &Data; 
+            Cast_Fn = nullptr; 
+        }
 
         template<class T>
-        Any(T&& value) { Data = std::forward<T>(value); Ref.Data_Ref = &Data; }
+        Any(T&& value) 
+        { 
+            Data = std::forward<T>(value); 
+            Ref.Data_Ref = &Data; 
+            Pretty_Type = Type_Id(std::forward<T>(value));
+            /*Cast_Fn = [&](std::any any){
+                T val = std::any_cast<T>(any);
+                val = std::any_cast<T>(Data);
+            };*/
+        }
 
         Any(){ Ref.Data_Ref = &Data; }
 
@@ -69,17 +89,52 @@ namespace ql
             std::any* Data_Ref = nullptr;
 
             template<class T>
-            operator T&() { return std::any_cast<T>(Data); }
+            operator T&() { return std::any_cast<T>(*Data_Ref); }
         };
 
         template<class T>
         T& As()
         {
-            return std::any_cast<T>(Data);
+            return std::any_cast<T&>(Data);
         }
 
+        template<class T>
+        void Set(T& value)
+        {
+            if (Cast_Fn != nullptr)
+            {
+                Cast_Fn(value);
+            }else
+            {
+                if (typeid(value) != Data.type())
+                {
+                    if (Type_Id_Traits(Data.type().name()).Is_Ref)
+                    {
+                        if (Type_Id_Traits(Data.type().name()).Is_Const && not std::is_const_v<T>)
+                        {
+                            value = As<const T&>();
+                            return;
+                        }
+
+                        value = As<T&>();
+                        return;
+                    }
+
+                    if (Type_Id_Traits(Data.type().name()).Is_Const && not std::is_const_v<T>)
+                    {
+                        value = As<const T>();
+                        return;
+                    }
+                }
+
+                value = As<T>();
+            }
+        }
+
+        std::function<void(std::any)> Cast_Fn = nullptr;
         std::any Data;
         Ref_T Ref;
+        boost::typeindex::type_index Pretty_Type;
     };
 
     struct Fn_Data

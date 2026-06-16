@@ -15,41 +15,61 @@ namespace ql
             typedef std::forward_iterator_tag iterator_category;
             typedef Any value_type;
             typedef Any* pointer;
-            typedef const Any& reference;
+            typedef Any reference;
             typedef ptrdiff_t difference_type;
             
-            Iterator(Enumerable& cont, Any iter_Ptr) : Container(&cont) { Ptr = iter_Ptr; }
+            Iterator(Enumerable* cont, Any iter_Ptr) : Container(cont) { Ptr = iter_Ptr; }
             Iterator(const Iterator& iterator){ *this = iterator; Container = nullptr; }
             ~Iterator(){}
 
             Iterator& operator++()
             {
                 Container->Iter_Increment(Ptr);
+                return *this;
             }
 
-            reference operator*() const
+            reference operator*()
             {
-                return Ptr;
+                return Container->Iter_Deref(Ptr);
             }
 
             Any Ptr;
             Enumerable* Container;
         };
 
+        Enumerable() : Value_Type(typeid(nullptr)) {}
+
         template<Iterable cont>
-        Enumerable(cont&& container)
+        Enumerable(cont&& container) : Value_Type(typeid(nullptr))
         {
-            Value_Type = typeid(cont::value_type);
+            Value_Type = typeid(typename std::decay_t<cont>::value_type);
 
             Insert_Fn = [](std::any arg){
                  
             };
 
-            Iter_Increment = [](Any& any){
-
+            Begin_Fn = [&](){
+                return Iterator(this, container.begin());
             };
 
-            Container = std::forward(container);
+            End_Fn = [&](){
+                return Iterator(this, container.end());
+            };
+
+            Iter_Increment = [&](Any& any){
+                any.As<decltype(container.begin())>()++;
+            };
+
+            std::cout << "enume typeid: " << Type_Id(container.begin()).pretty_name() << std::endl;
+
+
+            Iter_Deref = [&](Any& any) -> Any {
+                return *(any.As<
+                    decltype(container.begin())
+                >());
+            };
+
+            Container = std::forward<cont>(container);
         }
 
         template<Iterable cont, class ...Args>
@@ -63,18 +83,22 @@ namespace ql
         template<class T>
         void Insert(T value)
         {
-            std::forward_iterator a;
+            
         }
 
-
+        Iterator Begin()
+        {
+            return Begin_Fn();
+        }
 
         std::any Container;
-        const std::type_index Value_Type;
+        std::type_index Value_Type;
 
     private:
         void (*Insert_Fn)(std::any);
         std::function<Iterator()> Begin_Fn;
         std::function<Iterator()> End_Fn;
         std::function<void(Any&)> Iter_Increment;
+        std::function<Any(Any&)> Iter_Deref;
     };
 }
