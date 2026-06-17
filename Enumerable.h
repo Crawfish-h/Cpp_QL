@@ -44,30 +44,7 @@ namespace ql
         {
             Value_Type = typeid(typename std::decay_t<cont>::value_type);
 
-            Insert_Fn = [](std::any arg){
-                 
-            };
-
-            Begin_Fn = [&](){
-                return Iterator(this, container.begin());
-            };
-
-            End_Fn = [&](){
-                return Iterator(this, container.end());
-            };
-
-            Iter_Increment = [&](Any& any){
-                any.As<decltype(container.begin())>()++;
-            };
-
-            std::cout << "enume typeid: " << Type_Id(container.begin()).pretty_name() << std::endl;
-
-
-            Iter_Deref = [&](Any& any) -> Any {
-                return *(any.As<
-                    decltype(container.begin())
-                >());
-            };
+            
 
             Container = std::forward<cont>(container);
         }

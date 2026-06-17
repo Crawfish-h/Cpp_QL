@@ -53,6 +53,16 @@ namespace ql
         return std::holds_alternative<T>(variant);
     }
 
+    class Poly
+    {
+    public:
+        
+        void* Ptr = nullptr;
+    };
+
+    template <typename T>
+    inline constexpr bool Is_Not_Pointer_v = not std::is_pointer_v<T>;
+
     class Any
     {
     public:
@@ -64,15 +74,19 @@ namespace ql
         }
 
         template<class T>
-        Any(T&& value) 
+        Any(T value) 
         { 
             Data = std::forward<T>(value); 
             Ref.Data_Ref = &Data; 
             Pretty_Type = Type_Id(std::forward<T>(value));
-            /*Cast_Fn = [&](std::any any){
-                T val = std::any_cast<T>(any);
-                val = std::any_cast<T>(Data);
-            };*/
+
+            if constexpr (std::is_pointer_v<T>)
+            {
+                Cast_Fn = [&](std::any any){
+                    T val = std::any_cast<T>(any);
+                    *val = *std::any_cast<T>(Data);
+                };
+            }
         }
 
         Any(){ Ref.Data_Ref = &Data; }
@@ -98,37 +112,48 @@ namespace ql
             return std::any_cast<T&>(Data);
         }
 
+        
+
         template<class T>
+        requires Is_Not_Pointer_v<T>
         void Set(T& value)
         {
+            if (typeid(value) != Data.type())
+            {
+                if (Type_Id_Traits(Data.type().name()).Is_Ref)
+                {
+                    if (Type_Id_Traits(Data.type().name()).Is_Const && not std::is_const_v<T>)
+                    {
+                        value = As<const T&>();
+                        return;
+                    }
+
+                    value = As<T&>();
+                    return;
+                }
+
+                if (Type_Id_Traits(Data.type().name()).Is_Const && not std::is_const_v<T>)
+                {
+                    value = As<const T>();
+                    return;
+                }
+            }
+
+            value = As<T>();
+        }
+
+        template<class T>
+        requires requires(T t) { (decltype(t))nullptr; }
+        void Set(T value)
+        {
+            std::cout << "Set ptr\n";
             if (Cast_Fn != nullptr)
             {
                 Cast_Fn(value);
-            }else
-            {
-                if (typeid(value) != Data.type())
-                {
-                    if (Type_Id_Traits(Data.type().name()).Is_Ref)
-                    {
-                        if (Type_Id_Traits(Data.type().name()).Is_Const && not std::is_const_v<T>)
-                        {
-                            value = As<const T&>();
-                            return;
-                        }
-
-                        value = As<T&>();
-                        return;
-                    }
-
-                    if (Type_Id_Traits(Data.type().name()).Is_Const && not std::is_const_v<T>)
-                    {
-                        value = As<const T>();
-                        return;
-                    }
-                }
-
-                value = As<T>();
+                return;
             }
+            
+            value = As<T>();
         }
 
         std::function<void(std::any)> Cast_Fn = nullptr;

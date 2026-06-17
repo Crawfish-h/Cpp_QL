@@ -32,12 +32,25 @@ void test(F func, Tuple tuple)
 
 int main()
 {
-    ql::Map<std::string, int> map;
+    std::pair<int, std::string> two = { 33, "Pair" };
+    auto pair = &two;
+    ql::Any any = pair;
+
+    std::pair<int, std::string> val;
+    auto duo = &val;
+    any.Set(duo);
+    pair->first = 22;
+    ql::fmt::Print("duo: {}, {}\n", duo->first, duo->second);
+
+    /*ql::Map<std::string, int> map;
     map.emplace("aa0", 0);
     map.emplace("ab1", 1);
     map.emplace("ac2", 2);
     map.emplace("ad3", 3);
-    
+
+    auto pa = &map.begin();
+    std::cout << "map.begin(): " << (**pa).first << std::endl;
+
     std::vector<Test_Type> vec;
     vec.emplace_back(20, false);
     vec.emplace_back(12, true);
@@ -67,7 +80,7 @@ int main()
     ql::fmt::Print("pair: {}, {}\n", pair.first, pair.second);
     ql::fmt::Print("tt: {}, {}\n", tt.Number, tt.Boolean);
 
-    //static_assert(typeid(decltype(map)::key_type) == typeid(int));
+    //static_assert(typeid(decltype(map)::key_type) == typeid(int));*/
     
     return 0;
 }
