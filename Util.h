@@ -101,11 +101,13 @@ namespace ql
     class Poly
     {
     public:
+        Poly(){}
+
         template<class T>
-        Poly(T& value)
+        Poly(T value)
         {
-            Pointer = &value;
-            Type_Index = Type_Id_T(T*);
+            Pointer = value;
+            Type_Index = Type_Id_T(T);
         }
 
         template<class T>
@@ -113,11 +115,11 @@ namespace ql
         { 
             if (Type_Index != Type_Id_T(T))
             {
-                throw std::runtime_error(String_Format(
+                /*throw std::runtime_error(String_Format(
                     "Invalid cast from void* ({}) to {}\n", 
                     Type_Index.pretty_name(), 
                     Type_Id_T(T).pretty_name())
-                );
+                );*/
             }
 
             return static_cast<T>(Pointer); 
@@ -129,7 +131,7 @@ namespace ql
         }
         
     private:
-        Boost_Typei Type_Index;
+        Boost_Typei Type_Index = Type_Id(nullptr);
         void* Pointer = nullptr;
     };
 
@@ -149,17 +151,17 @@ namespace ql
         template<class T>
         Any(T value) 
         { 
-            Data = std::forward<T>(value); 
+            Data = value; 
             Ref.Data_Ref = &Data; 
-            Pretty_Type = Type_Id(std::forward<T>(value));
+            Pretty_Type = Type_Id_T(T);
 
-            if constexpr (std::is_pointer_v<T>)
+            /*if constexpr (std::is_pointer_v<T>)
             {
                 Cast_Fn = [&](std::any any){
                     T val = std::any_cast<T>(any);
                     *val = *std::any_cast<T>(Data);
                 };
-            }
+            }*/
         }
 
         Any(){ Ref.Data_Ref = &Data; }

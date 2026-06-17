@@ -13,27 +13,74 @@ namespace ql
         struct Iterator
         {
             typedef std::forward_iterator_tag iterator_category;
-            typedef Any value_type;
-            typedef Any* pointer;
-            typedef Any reference;
+            typedef Poly value_type;
+            typedef Poly pointer;
+            typedef Poly reference;
             typedef ptrdiff_t difference_type;
             
-            Iterator(Enumerable* cont, Any iter_Ptr) : Container(cont) { Ptr = iter_Ptr; }
+            Iterator(Enumerable* cont, Poly iter_Ptr, size_t iter_Pos) : 
+                Container(cont), Ptr(iter_Ptr), Iter_Pos(iter_Pos) {}
+
             Iterator(const Iterator& iterator){ *this = iterator; Container = nullptr; }
             ~Iterator(){}
 
             Iterator& operator++()
             {
-                Container->Iter_Increment(Ptr);
+                Iter_Pos++;
                 return *this;
+            }
+
+            Iterator& operator+=(ssize_t rh)
+            {
+                Iter_Pos += rh;
+                return *this;
+            }
+
+            Iterator& operator-=(ssize_t rh)
+            {
+                Iter_Pos -= rh;
+                return *this;
+            }
+
+            Iterator operator+(ssize_t rh)
+            {
+                return Iterator(Container, Ptr, Iter_Pos + rh);
+            }
+
+            Iterator operator-(ssize_t rh)
+            {
+                return Iterator(Container, Ptr, Iter_Pos - rh);
+            }
+
+            Iterator& operator+=(Iterator& rh)
+            {
+                Iter_Pos += rh.Iter_Pos;
+                return *this;
+            }
+
+            Iterator& operator-=(Iterator rh)
+            {
+                Iter_Pos -= rh.Iter_Pos;
+                return *this;
+            }
+
+            Iterator operator+(Iterator rh)
+            {
+                return Iterator(Container, Ptr, Iter_Pos + rh.Iter_Pos);
+            }
+
+            Iterator operator-(Iterator rh)
+            {
+                return Iterator(Container, Ptr, Iter_Pos - rh.Iter_Pos);
             }
 
             reference operator*()
             {
-                return Container->Iter_Deref(Ptr);
+                return Container->Iter_Deref(Iter_Pos);
             }
 
-            Any Ptr;
+            size_t Iter_Pos = 0;
+            Poly Ptr;
             Enumerable* Container;
         };
 
@@ -42,11 +89,29 @@ namespace ql
         template<Iterable cont>
         Enumerable(cont&& container) : Value_Type(typeid(nullptr))
         {
-            Value_Type = typeid(typename std::decay_t<cont>::value_type);
+            using value_type = typename std::decay_t<cont>::value_type;
+            using Vec_Type = std::vector<value_type>;
 
-            
+            Value_Type = typeid(value_type);
 
-            Container = std::forward<cont>(container);
+            auto& vector = Container.emplace<Vec_Type>();
+
+            for (auto& item : container)
+            {
+                vector.push_back(item);
+            }
+
+            Begin_Fn = [&](){
+                return Iterator(this, &*vector.begin(), 0);
+            };
+
+            End_Fn = [&](){
+                return Iterator(this, &*vector.end(), vector.size() - 1);
+            };
+
+            Iter_Deref = [&](size_t iter_Pos) -> Poly {
+                return &*(vector.begin() + iter_Pos);
+            };
         }
 
         template<Iterable cont, class ...Args>
@@ -72,10 +137,10 @@ namespace ql
         std::type_index Value_Type;
 
     private:
-        void (*Insert_Fn)(std::any);
+        void (*Push_Back)(std::any);
         std::function<Iterator()> Begin_Fn;
         std::function<Iterator()> End_Fn;
-        std::function<void(Any&)> Iter_Increment;
-        std::function<Any(Any&)> Iter_Deref;
+        std::function<void(Poly)> Iter_Increment;
+        std::function<Poly(size_t)> Iter_Deref;
     };
 }
