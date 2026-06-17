@@ -10,7 +10,7 @@
 #include <typeindex>
 #include <variant>
 #include <initializer_list>
-//#include <iterator>
+#include <stdexcept>
 #include <boost/type_index.hpp>
 
 namespace ql
@@ -22,6 +22,11 @@ namespace ql
 
     #define Type_Id(T) \
     boost::typeindex::type_id_with_cvr<decltype(T)>()
+
+    #define Type_Id_T(T) \
+    boost::typeindex::type_id_with_cvr<T>()
+
+    using Boost_Typei = boost::typeindex::type_index;
 
     auto Type_Id_Traits(std::string_view type_Name)
     {
@@ -47,6 +52,46 @@ namespace ql
         return traits;
     }
 
+    struct String_Format
+    {
+        String_Format(){};
+
+        template<class ...Args>
+        String_Format(std::string_view str, Args&&... args)
+        {
+            Str = std::vformat(str, std::make_format_args(args...));
+        }
+
+        String_Format(std::string_view str)
+        {
+            Str = str;
+        }
+
+        String_Format(const std::string&& str)
+        {
+            Str = str;
+        }
+
+        String_Format(const char* ch)
+        {
+            Str = ch;
+        }
+
+        operator std::string()
+        {
+            return Str;
+        }
+
+        //friend 
+
+        std::string Str;
+    };
+
+    std::ostream& operator<<(std::ostream& os, const String_Format& str_Format)
+    {
+        return os << str_Format.Str;
+    }
+
     template<class V, class T>
     bool Holds_Alt(V variant)
     {
@@ -56,8 +101,36 @@ namespace ql
     class Poly
     {
     public:
+        template<class T>
+        Poly(T& value)
+        {
+            Pointer = &value;
+            Type_Index = Type_Id_T(T*);
+        }
+
+        template<class T>
+        operator T() 
+        { 
+            if (Type_Index != Type_Id_T(T))
+            {
+                throw std::runtime_error(String_Format(
+                    "Invalid cast from void* ({}) to {}\n", 
+                    Type_Index.pretty_name(), 
+                    Type_Id_T(T).pretty_name())
+                );
+            }
+
+            return static_cast<T>(Pointer); 
+        }
+
+        const Boost_Typei& Type() const
+        {
+            return Type_Index;
+        }
         
-        void* Ptr = nullptr;
+    private:
+        Boost_Typei Type_Index;
+        void* Pointer = nullptr;
     };
 
     template <typename T>
@@ -293,34 +366,6 @@ namespace ql
         {
             return *std::any_cast<U*>(Data);
         }
-    };
-
-    struct String_Format
-    {
-        String_Format(){};
-
-        template<class ...Args>
-        String_Format(std::string_view str, Args&&... args)
-        {
-            Str = std::vformat(str, std::make_format_args(args...));
-        }
-
-        String_Format(std::string_view str)
-        {
-            Str = str;
-        }
-
-        String_Format(const std::string&& str)
-        {
-            Str = str;
-        }
-
-        String_Format(const char* ch)
-        {
-            Str = ch;
-        }
-
-        std::string Str;
     };
 
     enum Comp { And, Or };

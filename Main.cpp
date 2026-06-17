@@ -2,6 +2,7 @@
 #include <print>
 #include <vector>
 #include <ranges>
+#include <cassert>
 #include "Print.h"
 #include "Match.h"
 #include "Typedefs.h"
@@ -32,14 +33,28 @@ void test(F func, Tuple tuple)
 
 int main()
 {
+    int num = 101;
+    ql::Poly poly = num;
+    float* from_Poly = poly;
+    ql::fmt::Print("from_Poly: {}\n", *from_Poly);
+
+    ql::Boost_Typei ti = Type_Id_T(int);
+    std::type_index tix(typeid(int));
+    ql::fmt::Print("ti: {}\n", ti.raw_name());
+    ql::fmt::Print("tix: {}\n", tix.name());
+
+    if (ti.raw_name() == tix.name())
+        ql::fmt::Print("types are equal\n");
+
     std::pair<int, std::string> two = { 33, "Pair" };
     auto pair = &two;
-    ql::Any any = pair;
+    ql::Any any = &two;
 
     std::pair<int, std::string> val;
     auto duo = &val;
-    any.Set(duo);
-    pair->first = 22;
+    duo = any;
+    //any.Set(duo);
+    two.first = 22;
     ql::fmt::Print("duo: {}, {}\n", duo->first, duo->second);
 
     /*ql::Map<std::string, int> map;
