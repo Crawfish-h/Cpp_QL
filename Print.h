@@ -61,6 +61,13 @@ namespace ql
             }
         }
 
+        template<class... Args>
+        void Println(const std::string& message, Args&&... args)
+        {
+            Print(message, args...);
+            std::cout << "\n";
+        }
+
         inline void Newline()
         {
             Print("\n");

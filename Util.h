@@ -15,8 +15,6 @@
 
 namespace ql
 {       
-    #define Tid(T) #T
-
     // Type id for an expression.
     #define Tide(expr) 
 
@@ -27,6 +25,21 @@ namespace ql
     boost::typeindex::type_id_with_cvr<T>()
 
     using Boost_Typei = boost::typeindex::type_index;
+
+    template<class T>
+    using Refw = std::reference_wrapper<T>;
+
+    template<class T>
+    Boost_Typei Tid(T& expr)
+    {
+        return boost::typeindex::type_id_with_cvr<T>();
+    }
+
+    template<class T>
+    Boost_Typei Tid()
+    {
+        return boost::typeindex::type_id_with_cvr<T>();
+    }
 
     auto Type_Id_Traits(std::string_view type_Name)
     {
@@ -91,12 +104,27 @@ namespace ql
     {
         return os << str_Format.Str;
     }
+    
 
     template<class V, class T>
     bool Holds_Alt(V variant)
     {
         return std::holds_alternative<T>(variant);
     }
+
+    // A simply proxy that just prevents 
+    // conversions from ocurring with the stored type. 
+    template<class T>
+    struct Sim_Proxy
+    {
+        Sim_Proxy(){}
+        Sim_Proxy(T& value)
+        {
+            Value = value;
+        }
+        
+        T Value;
+    };
 
     class Poly
     {
@@ -111,15 +139,30 @@ namespace ql
         }
 
         template<class T>
+        T As()
+        {
+            if (Type_Index != Type_Id_T(T))
+            {
+                throw std::runtime_error(String_Format(
+                    "Invalid cast from void* ({}) to {}\n", 
+                    Type_Index.pretty_name(), 
+                    Type_Id_T(T).pretty_name())
+                );
+            }
+
+            return static_cast<T>(Pointer);
+        }
+
+        template<class T>
         operator T() 
         { 
             if (Type_Index != Type_Id_T(T))
             {
-                /*throw std::runtime_error(String_Format(
+                throw std::runtime_error(String_Format(
                     "Invalid cast from void* ({}) to {}\n", 
                     Type_Index.pretty_name(), 
                     Type_Id_T(T).pretty_name())
-                );*/
+                );
             }
 
             return static_cast<T>(Pointer); 
@@ -166,8 +209,6 @@ namespace ql
 
         Any(){ Ref.Data_Ref = &Data; }
 
-        operator std::any() { return Data; }
-
         template<class T>
         operator T() { return std::any_cast<T>(Data); }
 
@@ -186,8 +227,6 @@ namespace ql
         {
             return std::any_cast<T&>(Data);
         }
-
-        
 
         template<class T>
         requires Is_Not_Pointer_v<T>
@@ -235,6 +274,72 @@ namespace ql
         std::any Data;
         Ref_T Ref;
         boost::typeindex::type_index Pretty_Type;
+    };
+
+    template<class ...Types>
+    class Variant
+    {
+    public:
+        Variant(){}
+
+        template<class T>
+        Variant(T&& value)
+        {
+            Var_ = std::forward<T>(value);
+            Current_Type_ = Type_Id_T(T);
+        }
+
+        operator std::variant<Types...>()
+        {
+            return Var_;
+        }
+
+        operator std::variant<Types...>&()
+        {
+            return Var_;
+        }
+
+        operator std::string() 
+        { 
+            return Current_Type_.pretty_name();
+        }
+
+        operator Boost_Typei() 
+        { 
+            return Current_Type_;
+        }
+
+        template<class T>
+        operator T()
+        {
+            return std::get<T>(Var_);
+        }
+
+        template<class T>
+        operator T&()
+        {
+            return std::get<T&>(Var_);
+        }
+
+        template<class T>
+        T& As()
+        {
+            return std::get<T>(Var_);
+        }
+
+        const std::variant<Types...>& Get_Variant() const
+        {
+            return Var_;
+        }
+
+        const Boost_Typei& Type() const
+        {
+            return Current_Type_;
+        }
+
+    private:
+        std::variant<Types...> Var_;
+        Boost_Typei Current_Type_ = typeid(nullptr);
     };
 
     struct Fn_Data
@@ -381,6 +486,9 @@ namespace ql
             return ((value == args) || ...);
     }
 
+    template<class F>
+    using Return_Type_T = typename decltype(std::function{std::declval<F>()})::result_type;
+
     template <class F, class R, class ...Args>
     concept Callable = std::is_invocable_r_v<R, F, Args...>;
 
@@ -393,17 +501,32 @@ namespace ql
         { f() } -> std::convertible_to<void>;
     };
 
-    template<Returns_Void F>
-    void* Func_Rem_Void(F block)
+    template<class F, class ...Args, template<class> class Tuple_Like> 
+    auto Call_Fn_With_Args(F block, Tuple_Like<Args...>& tuple_Like)
     {
-        block();
+        return block();
+    }
+
+    template<class F, class ...Args, template<class> class Tuple_Like> 
+    requires requires(F block, Args... args)
+    { block(args...); }
+    auto Call_Fn_With_Args(F block, Tuple_Like<Args...>& tuple_Like)
+    {
+        std::cout << "Call_Fn\n";
+        return std::apply(block, tuple_Like);
+    }
+
+    template<Returns_Void F, class ...Args>
+    void* Func_Rem_Void(F block, Args... args)
+    {
+        block(args...);
         return nullptr;
     }
 
-    template<class F>
-    auto Func_Rem_Void(F block)
+    template<class F, class ...Args>
+    auto Func_Rem_Void(F block, Args... args)
     {
-        return block();
+        return block(args...);
     }
 
     template<class T>

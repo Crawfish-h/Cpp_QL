@@ -13,23 +13,23 @@ namespace ql
     {
         struct Defualt_Return
         {
-            Defualt_Return(const std::vector<std::any>& values, 
-                const std::vector<std::tuple<Args...>>& match_Args)
+            Defualt_Return(const Any& values, 
+                const std::tuple<Args...>& match_Args)
             {
                 Values = values;
                 Match_Args = match_Args;
             }
 
-            std::vector<std::any> Values;
-            std::vector<std::tuple<Args...>> Match_Args;
+            Any Values;
+            std::tuple<Args...> Match_Args;
         };
 
     public:
         Match(Args... values)
         {
             Values_ = { values... };
-            Return_Values_ = {};
-            Return_Valid_Match_Args_ = {};
+            Return_Value_ = {};
+            Return_Valid_Match_Arg_ = {};
         }
 
         template<class F>
@@ -42,10 +42,18 @@ namespace ql
                 if (case_Values == Values_)
                 {
                     Found_Value_ = true;
-                    Return_Values_.push_back(Func_Rem_Void(block));
-                    Return_Valid_Match_Args_.push_back(case_Values);
 
-                    if (Return_Values_.back().type() == typeid(Match_Break_Type))
+                    if constexpr (not std::is_same_v<ql::Return_Type_T<decltype(block)>, void>)
+                    {
+                        Return_Value_ = Call_Fn_With_Args(block, Values_);
+                    }else
+                    {
+                        Call_Fn_With_Args(block, Values_);
+                    }
+                    
+                    Return_Valid_Match_Arg_ = case_Values;
+
+                    if (Return_Value_.Pretty_Type == typeid(Match_Break_Type))
                     {
                         Match_Broken_ = true;
                     }
@@ -56,25 +64,27 @@ namespace ql
         }
 
         template<class F>
-        Defualt_Return Defualt(F block)
+        Defualt_Return Defualt(F block_No_Args)
         {
             if (Found_Value_ == false)
             {
-                Return_Values_.push_back(Func_Rem_Void(block));
-                if (Return_Values_.back().type() == typeid(nullptr))
+                if constexpr (not std::is_same_v<ql::Return_Type_T<decltype(block_No_Args)>, void>)
                 {
-                    Return_Values_.pop_back();
+                    Return_Value_ = block_No_Args();
+                }else
+                {
+                    block_No_Args();
                 }
             }
 
-            return Defualt_Return(Return_Values_, Return_Valid_Match_Args_);
+            return Defualt_Return(Return_Value_, Return_Valid_Match_Arg_);
         }
 
     private:
         bool Found_Value_ = false;
         bool Match_Broken_ = false;
         std::tuple<Args...> Values_;
-        std::vector<std::any> Return_Values_;
-        std::vector<std::tuple<Args...>> Return_Valid_Match_Args_;
+        std::tuple<Args...> Return_Valid_Match_Arg_;
+        Any Return_Value_;
     };
 }
